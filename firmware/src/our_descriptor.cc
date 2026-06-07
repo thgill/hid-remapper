@@ -586,6 +586,82 @@ void xac_compat_clear_report(uint8_t* report, uint8_t report_id, uint16_t len) {
     memcpy(report, xac_compat_neutral, sizeof(xac_compat_neutral));
 }
 
+// ── ApolloJoypad (XEOX Gamepad SL-6556-BK) ───────────────────────────────────
+// VID: 0x0C45, PID: 0x4320
+// Idle report: 80 7C 80 80 00 00 08 00
+const uint8_t our_report_descriptor_apollo[] = {
+    0x05, 0x01,              // Usage Page (Generic Desktop)
+    0x09, 0x04,              // Usage (Joystick)
+    0xA1, 0x01,              // Collection (Application)
+      0x09, 0x01,            //   Usage (Pointer)
+      0xA1, 0x00,            //   Collection (Physical)
+        0x15, 0x00,          //     Logical Minimum (0)
+        0x26, 0xFF, 0x00,    //     Logical Maximum (255)
+        0x35, 0x00,          //     Physical Minimum (0)
+        0x46, 0xFF, 0x00,    //     Physical Maximum (255)
+        0x05, 0x01,          //     Usage Page (Generic Desktop)
+        0x09, 0x30,          //     Usage (X)
+        0x09, 0x31,          //     Usage (Y)
+        0x09, 0x32,          //     Usage (Z)
+        0x09, 0x35,          //     Usage (Rz)
+        0x75, 0x08,          //     Report Size (8)
+        0x95, 0x04,          //     Report Count (4)
+        0x81, 0x02,          //     Input (Data, Variable, Absolute)
+      0xC0,                  //   End Collection
+      0x05, 0x09,            //   Usage Page (Button)
+      0x19, 0x01,            //   Usage Minimum (1)
+      0x29, 0x0C,            //   Usage Maximum (12)
+      0x15, 0x00,            //   Logical Minimum (0)
+      0x25, 0x01,            //   Logical Maximum (1)
+      0x75, 0x01,            //   Report Size (1)
+      0x95, 0x0C,            //   Report Count (12)
+      0x81, 0x02,            //   Input (Data, Variable, Absolute)
+      0x95, 0x04,            //   Report Count (4) padding
+      0x81, 0x01,            //   Input (Constant)
+      0x05, 0x01,            //   Usage Page (Generic Desktop)
+      0x09, 0x39,            //   Usage (Hat switch)
+      0x15, 0x00,            //   Logical Minimum (0)
+      0x25, 0x07,            //   Logical Maximum (7)
+      0x35, 0x00,            //   Physical Minimum (0)
+      0x46, 0x3B, 0x01,      //   Physical Maximum (315)
+      0x65, 0x12,            //   Unit (SI Rotation)
+      0x75, 0x04,            //   Report Size (4)
+      0x95, 0x01,            //   Report Count (1)
+      0x81, 0x02,            //   Input (Data, Variable, Absolute)
+      0x75, 0x01,            //   Report Size (1)
+      0x95, 0x04,            //   Report Count (4) padding
+      0x81, 0x01,            //   Input (Constant)
+      0x06, 0x00, 0xFF,      //   Usage Page (Vendor)
+      0x09, 0x01,            //   Usage (Vendor 1)
+      0x15, 0x00,            //   Logical Minimum (0)
+      0x26, 0xFF, 0x00,      //   Logical Maximum (255)
+      0x75, 0x08,            //   Report Size (8)
+      0x95, 0x01,            //   Report Count (1)
+      0x81, 0x02,            //   Input (Data, Variable, Absolute)
+    0xC0                     // End Collection
+};
+
+static const uint8_t apollo_neutral[] = { 0x80, 0x7C, 0x80, 0x80, 0x00, 0x00, 0x08, 0x00 };
+
+void apollo_clear_report(uint8_t* report, uint8_t report_id, uint16_t len) {
+    memcpy(report, apollo_neutral, sizeof(apollo_neutral));
+}
+
+int32_t apollo_default_value(uint32_t usage) {
+    switch (usage) {
+        case 0x00010039:  // Hat switch null = 8
+            return 8;
+        case 0x00010030:  // X center
+        case 0x00010032:  // Z center
+        case 0x00010035:  // Rz center
+            return 0x80;
+        case 0x00010031:  // Y center = 0x7C (ApolloJoypad quirk)
+            return 0x7C;
+        default:
+            return 0;
+    }
+}
+
 int32_t horipad_default_value(uint32_t usage) {
     switch (usage) {
         case 0x00010039:
@@ -695,6 +771,16 @@ const our_descriptor_def_t our_descriptors[] = {
         .handle_received_report = do_handle_received_report,
         .clear_report = xac_compat_clear_report,
         .default_value = ps4_stadia_default_value,  // sic
+    },
+    {
+        .idx = 6,
+        .descriptor = our_report_descriptor_apollo,
+        .descriptor_length = sizeof(our_report_descriptor_apollo),
+        .vid = 0x0C45,
+        .pid = 0x4320,
+        .handle_received_report = do_handle_received_report,
+        .clear_report = apollo_clear_report,
+        .default_value = apollo_default_value,
     },
 };
 
